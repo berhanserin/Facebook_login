@@ -21,14 +21,21 @@ passport.deserializeUser(function (user, done) {
 passport.use(
   new FacebookStrategy(
     {
-      clientID: "2013140338853529",
-      clientSecret: "59bedff9673eef37d5aafd4ec17da69a",
+      clientID: "440400450893972",
+      clientSecret: "254f72bc5811cb7ae69fd2fe3927c96d",
       callbackURL: "http://localhost:5000/auth/facebook/callback",
       profileFields: ["id", "displayName", "photos", "email"],
     },
     function (accessToken, refreshToken, profile, done) {
-      console.log(accessToken);
-      return done(null, profile);
+      console.log(profile);
+      const { email, first_name, last_name } = profile._raw;
+      const userData = {
+        email,
+        firstName: first_name,
+        lastName: last_name,
+      };
+      console.log(userData);
+      done(null, profile);
     }
   )
 );
@@ -43,7 +50,8 @@ app.get(
   "/auth/facebook/callback",
   passport.authenticate("facebook", { failureRedirect: "/login" }),
   function (req, res) {
-    req.logIn(true);
+    console.log(req.user);
+    req.logIn();
     res.redirect("/login");
   }
 );
