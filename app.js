@@ -6,55 +6,76 @@ const path = require("path");
 const passport = require("passport");
 const FacebookStrategy = require("passport-facebook");
 const isLoggedIn = require("./middleware/auth");
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 app.get("", (req, res) => {
   res.sendFile(path.join(__dirname, "/View/Login.html"));
 });
 
-passport.serializeUser(function (user, done) {
-  done(null, user);
-});
-passport.deserializeUser(function (user, done) {
-  done(null, user);
-});
+passport.use(new GoogleStrategy({
+  clientID: "68043017874-cnr3gf9ci8uns38t9fr9em24co7sunv2.apps.googleusercontent.com",
+  clientSecret: "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",
+  callbackURL: "http://localhost:5000/auth/google/callback"
+},
+function(accessToken, refreshToken, profile, cb) {
+  console.log(profile)
+}
+));
 
-passport.use(
-  new FacebookStrategy(
-    {
-      clientID: "440400450893972",
-      clientSecret: "254f72bc5811cb7ae69fd2fe3927c96d",
-      callbackURL: "http://localhost:5000/auth/facebook/callback",
-      profileFields: ["id", "displayName", "photos", "email"],
-    },
-    function (accessToken, refreshToken, profile, done) {
-      console.log(profile);
-      const { email, first_name, last_name } = profile._raw;
-      const userData = {
-        email,
-        firstName: first_name,
-        lastName: last_name,
-      };
-      console.log(userData);
-      done(null, profile);
-    }
-  )
-);
+app.get('/auth/google',
+  passport.authenticate('google', { scope: ['profile'] }));
 
-app.get("/login", isLoggedIn, (req, res) => {
-  res.send(`Hello world ${req.user.displayName}`);
-});
+app.get('/auth/google/callback', 
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  function(req, res) {
+    // Successful authentication, redirect home.
+    res.redirect('/');
+  });
 
-app.get("/auth/facebook", passport.authenticate("facebook"));
+// passport.serializeUser(function (user, done) {
+//   done(null, user);
+// });
+// passport.deserializeUser(function (user, done) {
+//   done(null, user);
+// });
 
-app.get(
-  "/auth/facebook/callback",
-  passport.authenticate("facebook", { failureRedirect: "/login" }),
-  function (req, res) {
-    console.log(req.user);
-    req.logIn();
-    res.redirect("/login");
-  }
-);
+// passport.use(
+//   new FacebookStrategy(
+//     {
+//       clientID: "440400450893972",
+//       clientSecret: "254f72bc5811cb7ae69fd2fe3927c96d",
+//       callbackURL: "http://localhost:5000/auth/facebook/callback",
+//       profileFields: ["id", "displayName", "photos", "email"],
+//     },
+//     function (accessToken, refreshToken, profile, done) {
+//       console.log(profile);
+//       const { email, first_name, last_name } = profile._raw;
+//       const userData = {
+//         email,
+//         firstName: first_name,
+//         lastName: last_name,
+//       };
+//       console.log(userData);
+//       done(null, profile);
+//     }
+//   )
+// );
+
+// app.get("/login", isLoggedIn, (req, res) => {
+//   res.send(`Hello world ${req.user.displayName}`);
+// });
+
+// app.get("/auth/facebook", passport.authenticate("facebook"));
+
+// app.get(
+//   "/auth/facebook/callback",
+//   passport.authenticate("facebook", { failureRedirect: "/login" }),
+//   function (req, res) {
+//     console.log(req.user);
+//     req.logIn();
+//     res.redirect("/login");
+//   }
+// );
 
 app.listen(5000, () => {
   console.log(`Server Aktif 🚀🚀🚀🚀`);
