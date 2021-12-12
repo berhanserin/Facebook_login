@@ -8,10 +8,19 @@ const FacebookStrategy = require("passport-facebook");
 const isLoggedIn = require("./middleware/auth");
 const GoogleStrategy = require("passport-google-oauth20");
 const TwitterStrategy = require("passport-twitter");
+const session = require("express-session");
 
 app.get("", (req, res) => {
   res.sendFile(path.join(__dirname, "/View/Login.html"));
 });
+
+app.use(
+  session({
+    resave: false,
+    saveUninitialized: true,
+    secret: "bla bla bla",
+  })
+);
 
 passport.use(
   new GoogleStrategy(
@@ -35,8 +44,8 @@ passport.use(
       callbackURL: "http://localhost:5000/auth/twitter/callback",
     },
     function (token, tokenSecret, profile, cb) {
-      console.log(user);
-      return cb(err, user);
+      console.log(profile);
+      return cb(err, profile);
     }
   )
 );
