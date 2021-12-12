@@ -6,31 +6,63 @@ const path = require("path");
 const passport = require("passport");
 const FacebookStrategy = require("passport-facebook");
 const isLoggedIn = require("./middleware/auth");
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const GoogleStrategy = require("passport-google-oauth20");
+const TwitterStrategy = require("passport-twitter");
 
 app.get("", (req, res) => {
   res.sendFile(path.join(__dirname, "/View/Login.html"));
 });
 
-passport.use(new GoogleStrategy({
-  clientID: "68043017874-cnr3gf9ci8uns38t9fr9em24co7sunv2.apps.googleusercontent.com",
-  clientSecret: "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",
-  callbackURL: "http://localhost:5000/auth/google/callback"
-},
-function(accessToken, refreshToken, profile, cb) {
-  console.log(profile)
-}
-));
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID:
+        "68043017874-cnr3gf9ci8uns38t9fr9em24co7sunv2.apps.googleusercontent.com",
+      clientSecret: "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",
+      callbackURL: "http://localhost:5000/auth/google/callback",
+    },
+    function (accessToken, refreshToken, profile, cb) {
+      console.log(profile);
+    }
+  )
+);
 
-app.get('/auth/google',
-  passport.authenticate('google', { scope: ['profile'] }));
+passport.use(
+  new TwitterStrategy(
+    {
+      consumerKey: "mooc93VnvuLOPdAJwsRtwhMOs",
+      consumerSecret: "TGJGOEh92UXFhKmebyQvdJXTcjd74L9BHtgs4DuJIDJLk6A4to",
+      callbackURL: "http://localhost:5000/auth/twitter/callback",
+    },
+    function (token, tokenSecret, profile, cb) {
+      console.log(user);
+      return cb(err, user);
+    }
+  )
+);
 
-app.get('/auth/google/callback', 
-  passport.authenticate('google', { failureRedirect: '/login' }),
-  function(req, res) {
-    
-    res.redirect('/');
-  });
+app.get("/auth/twitter", passport.authenticate("twitter"));
+
+app.get(
+  "/auth/twitter/callback",
+  passport.authenticate("twitter", { failureRedirect: "/login" }),
+  function (req, res) {
+    res.redirect("/");
+  }
+);
+
+app.get(
+  "/auth/google",
+  passport.authenticate("google", { scope: ["profile"] })
+);
+
+app.get(
+  "/auth/google/callback",
+  passport.authenticate("google", { failureRedirect: "/login" }),
+  function (req, res) {
+    res.redirect("/");
+  }
+);
 
 passport.serializeUser(function (user, done) {
   done(null, user);
