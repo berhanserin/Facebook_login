@@ -1,5 +1,5 @@
 const isLoggedIn = (req, res, next) => {
-  if (req.user) {
+  if (req.session.passport.user) {
     next();
   } else {
     res.status(401).send("Not Logged In");

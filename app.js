@@ -9,10 +9,15 @@ const isLoggedIn = require("./middleware/auth");
 const GoogleStrategy = require("passport-google-oauth20");
 const TwitterStrategy = require("passport-twitter");
 const session = require("express-session");
+const mongoose = require("mongoose");
+const { User } = require("./models/User");
 
 app.get("", (req, res) => {
   res.sendFile(path.join(__dirname, "/View/Login.html"));
 });
+
+app.use(passport.initialize());
+app.set("view engine", "pug");
 
 app.use(
   session({
@@ -32,6 +37,7 @@ passport.use(
     },
     function (accessToken, refreshToken, profile, cb) {
       console.log(profile);
+      return cb(null, profile);
     }
   )
 );
@@ -44,8 +50,7 @@ passport.use(
       callbackURL: "http://localhost:5000/auth/twitter/callback",
     },
     function (token, tokenSecret, profile, cb) {
-      console.log(profile);
-      return cb(err, profile);
+      return cb(null, profile);
     }
   )
 );
@@ -56,7 +61,10 @@ app.get(
   "/auth/twitter/callback",
   passport.authenticate("twitter", { failureRedirect: "/login" }),
   function (req, res) {
-    res.redirect("/");
+    const { displayName, provider } = req.session.passport.user;
+    User.create({ displayName, provider }).then(() => {
+      res.redirect("/dashboard");
+    });
   }
 );
 
@@ -69,7 +77,10 @@ app.get(
   "/auth/google/callback",
   passport.authenticate("google", { failureRedirect: "/login" }),
   function (req, res) {
-    res.redirect("/");
+    const { displayName, provider } = req.session.passport.user;
+    User.create({ displayName, provider }).then(() => {
+      res.redirect("/dashboard");
+    });
   }
 );
 
@@ -89,35 +100,43 @@ passport.use(
       profileFields: ["id", "displayName", "photos", "email"],
     },
     function (accessToken, refreshToken, profile, done) {
-      console.log(profile);
-      const { email, first_name, last_name } = profile._raw;
-      const userData = {
-        email,
-        firstName: first_name,
-        lastName: last_name,
-      };
-      console.log(userData);
       done(null, profile);
     }
   )
 );
 
-app.get("/login", isLoggedIn, (req, res) => {
-  res.send(`Hello world ${req.user.displayName}`);
+app.get("/dashboard", (req, res) => {
+  const { displayName, provider } = req.session.passport.user;
+  res.render(path.join(__dirname, "/View/dashboard.pug"), {
+    displayName,
+    provider,
+  });
 });
 
 app.get("/auth/facebook", passport.authenticate("facebook"));
 
+// req.session.passport.user
 app.get(
   "/auth/facebook/callback",
   passport.authenticate("facebook", { failureRedirect: "/login" }),
   function (req, res) {
-    console.log(req.user);
-    req.logIn();
-    res.redirect("/login");
+    const { displayName, provider } = req.session.passport.user;
+    User.create({ displayName, provider }).then(() => {
+      res.redirect("/dashboard");
+    });
   }
 );
 
-app.listen(5000, () => {
-  console.log(`Server Aktif 🚀🚀🚀🚀`);
-});
+mongoose
+  .connect(`mongodb://localhost:27017/login`, {
+    useUnifiedTopology: true,
+    useNewUrlParser: true,
+  })
+  .then(() => {
+    app.listen(5000, () => {
+      console.log(`Server Aktif 🚀🚀🚀🚀`);
+    });
+  })
+  .catch((hata) => {
+    console.log(`${hata}`);
+  });
