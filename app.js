@@ -11,6 +11,7 @@ const TwitterStrategy = require("passport-twitter");
 const session = require("express-session");
 const mongoose = require("mongoose");
 const { User } = require("./models/User");
+const authRouter = require("./middleware/authRouter");
 
 app.get("", (req, res) => {
   res.sendFile(path.join(__dirname, "/View/Login.html"));
@@ -105,9 +106,25 @@ passport.use(
   )
 );
 
-app.get("/dashboard", (req, res) => {
+app.get("/facebook", isLoggedIn, authRouter.isRouterFacebook, (req, res) => {
   const { displayName, provider } = req.session.passport.user;
-  res.render(path.join(__dirname, "/View/dashboard.pug"), {
+  res.render(path.join(__dirname, "/View/facebook.pug"), {
+    displayName,
+    provider,
+  });
+});
+
+app.get("/google", isLoggedIn, authRouter.isRouterGoogle, (req, res) => {
+  const { displayName, provider } = req.session.passport.user;
+  res.render(path.join(__dirname, "/View/google.pug"), {
+    displayName,
+    provider,
+  });
+});
+
+app.get("/twitter", isLoggedIn, authRouter.isRouterTwitter, (req, res) => {
+  const { displayName, provider } = req.session.passport.user;
+  res.render(path.join(__dirname, "/View/twitter.pug"), {
     displayName,
     provider,
   });
@@ -122,10 +139,15 @@ app.get(
   function (req, res) {
     const { displayName, provider } = req.session.passport.user;
     User.create({ displayName, provider }).then(() => {
-      res.redirect("/dashboard");
+      res.redirect("/facebook");
     });
   }
 );
+
+app.get("/logout", function (req, res) {
+  req.logout();
+  res.redirect("/");
+});
 
 mongoose
   .connect(`mongodb://localhost:27017/login`, {
